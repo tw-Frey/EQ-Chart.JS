@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>EQ Chart.Js</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src=js/Chart.min.js></script>
+    <script src=js/jquery-3.2.1.min.js></script>
+    <script>
+        /* x range */
+        const MinHz = 20;
+        const MaxHz = 200;
+        /* point number and delta */
+        const COUNT = 180;
+        const DELTA = (MaxHz - MinHz) / COUNT;
+        /* BW in OC convert Q */
+        const OCtoQ = {
+             0: 14.42,
+             1: 1.414,
+             2: 0.667,
+             3: 0.404,
+             4: 0.267,
+             5: 0.182,
+             6: 0.127,
+             7: 0.089,
+             8: 0.063,
+             9: 0.044,
+            10: 0.031,
+            11: 0.022,
+        };
+        /* custom function */
+        const MR2dB_COEF = 20.0 / Math.LN10;
+        const MR2dB = magResponse => MR2dB_COEF * Math.log(magResponse);
+        const setValueAtTime = (obj, value, time) => obj["setValueAtTime"](value, time);
+        const requestAnimationFrame = f => window.setTimeout(f, 300);
+        const createBiquadFilter = (atx, type) => {
+            const filter = atx.createBiquadFilter();
+            filter.type = type;
+            return filter;
+        }
+    </script>
+    <style>
+        input {
+            outline: 0px;
+            -webkit-appearance: none;
+            background-color: gainsboro;
+            display: block;
+            width: 100%;
+        }
+        input::after {
+            content: attr(prefix)attr(result);
+            display: block;
+            width: 65px;
+            line-height:160%;
+            color:black;
+            background-color: grey;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="eq-chart" width=360 height=300 style="margin:auto;border:solid 1px"></canvas>
+    <div>
+        <label style=color:blue>Low Pass</label>
+        <input type="range" oninput="$(this).attr('result', value);setValueAtTime(filter1.frequency, value, atx.currentTime);requestAnimationFrame(Chart_EQ);" min=20 max=200 value=150 result=150 prefix="Hz = ">
+        <input type="range" oninput="$(this).attr('result', OCtoQ[value]);setValueAtTime(filter1.Q, OCtoQ[value], atx.currentTime);requestAnimationFrame(Chart_EQ);" min=0 max=11 value=11 prefix="Q = " class=Q>
+        <input type="range" oninput="$(this).attr('result', value);setValueAtTime(filter1.gain, value, atx.currentTime);requestAnimationFrame(Chart_EQ);" min=-10 max=10 value=0 result=0 prefix="Gain = ">
+        <hr>
+        <label style=color:green>Peaking</label>
+        <input type="range" oninput="$(this).attr('result', value);setValueAtTime(filter2.frequency, value, atx.currentTime);requestAnimationFrame(Chart_EQ);" min=20 max=200 value=50 result=150 prefix="Hz = ">
+        <input type="range" oninput="$(this).attr('result', OCtoQ[value]);setValueAtTime(filter2.Q, OCtoQ[value], atx.currentTime);requestAnimationFrame(Chart_EQ);" min=0 max=11 value=0 prefix="Q = " class=Q>
+        <input type="range" oninput="$(this).attr('result', value);setValueAtTime(filter2.gain, value, atx.currentTime);requestAnimationFrame(Chart_EQ);" min=-10 max=10 value=0 result=0 prefix="Gain = ">
+    </div>
+</body>
+<script>
+    const atx = new (window.AudioContext || window.webkitAudioContext)();
+    const filter1 = createBiquadFilter(atx,"lowpass");
+    const filter2 = createBiquadFilter(atx,"peaking");
+    filter1.connect(filter2).connect(atx.destination);
+    setValueAtTime(filter1.frequency, 180, atx.currentTime);
+    setValueAtTime(filter2.frequency,  50, atx.currentTime);
+    setValueAtTime(filter1.Q, OCtoQ[11], atx.currentTime);
+    setValueAtTime(filter2.Q, OCtoQ[ 0], atx.currentTime);
+    setValueAtTime(filter1.gain, 0, atx.currentTime);
+    setValueAtTime(filter2.gain, 0, atx.currentTime);
+</script>
+<script>
+    const DataSet = (f => (f.prototype = {
+        fill: false,
+        borderWidth: 0.2,
+        lineTension: 0, // Set to 0 to draw straightlines, default = 0.4
+        cubicInterpolationMode: 'monotone',
+        pointRadius: 0,
+        pointHitRadius: 0,
+    }) && f)(function (extend) { return $.extend(this, extend) });
+    const eqChart = new Chart(document.getElementById('eq-chart'), {
+        type: 'line',
+        data: {
+            datasets: [
+                new DataSet({
+                    label: "ParaGraphic EQ",
+                    backgroundColor: 'red',
+                    borderColor: 'red',
+                    borderWidth: 1,
+                }),
+                new DataSet({
+                    label: "LowPass",
+                    backgroundColor: 'blue',
+                    borderColor: 'blue',
+                }),
+                new DataSet({
+                    label: "Peaking",
+                    backgroundColor: 'green',
+                    borderColor: 'green',
+                }),
+                new DataSet({
+                    label: "原點水平線",
+                    backgroundColor: 'black',
+                    borderColor: 'black',
+                    data: [{ x: 0, y: 0 }, { x: 200, y: 0 }]
+                }),
+            ]
+        },
+        options: {
+            responsive: false,
+            layout: {
+                // padding: {
+                //     left: -5
+                // }
+            },
+            legend: {
+                // display: false
+                labels: {
+                    filter: label => label.datasetIndex == 0
+                }
+            },
+            scales: {
+                xAxes: [{
+                    // display:false,
+                    type: 'logarithmic',
+                    ticks: {
+                        min: MinHz,
+                        max: MaxHz,
+                        maxRotation: 0,
+                        // maxTicksLimit: 2,
+                        callback: v => v + "Hz"
+                    },
+                }],
+                yAxes: [{
+                    ticks: {
+                        // mirror: true,
+                        // padding: -5,
+                        suggestedMin: -10,
+                        suggestedMax:  10,
+                        maxTicksLimit:  5,
+                        callback: v => Math.round(v*100)/100 + "dB"
+                    },
+                    gridLines: {
+                        display: false
+                    }
+                }]
+            },
+            /*
+                http://www.chartjs.org/docs/latest/charts/line.html#disable-animations
+                Disable Animations
+            */
+            animation: {
+                duration: 0, // general animation time
+            },
+            hover: {
+                animationDuration: 0, // duration of animations when hovering an item
+            },
+            responsiveAnimationDuration: 0, // animation duration after a resize
+        }
+    });
+    const phaseResponse = new Float32Array(COUNT); // dummy
+    const magResponse_1 = new Float32Array(COUNT);
+    const magResponse_2 = new Float32Array(COUNT);
+    const frequencyHz   = new Float32Array(COUNT).map((_, i) => MinHz + i * DELTA);
+    const Chart_EQ = () => {
+        var points0 = [];
+        var points1 = [];
+        var points2 = [];
+        filter1.getFrequencyResponse(frequencyHz, magResponse_1, phaseResponse);
+        filter2.getFrequencyResponse(frequencyHz, magResponse_2, phaseResponse);
+        frequencyHz.forEach((f, i) => {
+            var dbResponse1 = MR2dB(magResponse_1[i]);
+            var dbResponse2 = MR2dB(magResponse_2[i]);
+            points0.push({
+                x: f, y: dbResponse1+dbResponse2
+            });
+            points1.push({
+                x: f, y: dbResponse1
+            });
+            points2.push({
+                x: f, y: dbResponse2
+            });
+        });
+        eqChart.data.datasets[0].data = points0;
+        eqChart.data.datasets[1].data = points1;
+        eqChart.data.datasets[2].data = points2;
+        eqChart.update();
+    }
+</script>
+<script>
+    $(() => {
+        $(".Q").each((_, q) => $(q).attr('result', OCtoQ[q.value]));
+        requestAnimationFrame(Chart_EQ);
+    });
+</script>
+</html>
