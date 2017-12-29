@@ -185,6 +185,14 @@
                     borderColor: 'black',
                     data: [{ x: MinHz, y: 0 }, { x: MaxHz, y: 0 }]
                 }),
+                new DataSet({
+                    label: "EQ 參考點",
+                    type: "scatter",
+                    showLine: false,
+                    pointRadius: 3,
+                    borderWidth: 1,
+                    borderColor: 'black',
+                })
             ]
         },
         options: {
@@ -264,6 +272,11 @@
         }), pointsArray[0]);
         /* update datasets */
         pointsArray.forEach((points, i) => eqChart.data.datasets[i].data = points);
+        /* update eq component points */
+        $(".F").each((i, input) => eqChart.data.datasets[eqChart.data.datasets.length - 1].data[i] = { 
+            x: input.value,
+            y: i > 0 && i < 6 ? $(".G").get(i).value : BWtoQ[$(".Q").get(i).value]
+        });
         /* plot */
         eqChart.update();
     }
