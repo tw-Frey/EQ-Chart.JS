@@ -40,6 +40,11 @@
         }
     </script>
     <style>
+        #range_container {
+            height: 340px;
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
         input {
             outline: 0px;
             -webkit-appearance: none;
@@ -59,25 +64,53 @@
 </head>
 <body>
     <canvas id="eq-chart" width=360 height=300 style="margin:auto;border:solid 1px"></canvas>
-    <div>
-        <label style=color:blue>Low Pass</label>
-        <input type="range" class=F min=20  max=250 value=200 prefix="Hz = ">
+    <div id=range_container>
+        <label style=color:blueviolet>High Pass</label>
+        <input type="range" class=F min=20  max=250 value=20 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0  prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0  prefix="Gain = ">
+        <hr>
+        <label style=color:green>Peaking</label>
+        <input type="range" class=F min=20  max=250 value=60 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0  prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0  prefix="Gain = ">
+        <hr>
+        <label style=color:green>Peaking</label>
+        <input type="range" class=F min=20  max=250 value=100 prefix="Hz = ">
         <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
         <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
         <hr>
         <label style=color:green>Peaking</label>
-        <input type="range" class=F min=20  max=250 value=50 prefix="Hz = ">
-        <input type="range" class=Q min=0   max=11  value=0  prefix="Q = ">
-        <input type="range" class=G min=-10 max=10  value=0  prefix="Gain = ">
+        <input type="range" class=F min=20  max=250 value=140 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
+        <hr>
+        <label style=color:green>Peaking</label>
+        <input type="range" class=F min=20  max=250 value=180 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
+        <hr>
+        <label style=color:green>Peaking</label>
+        <input type="range" class=F min=20  max=250 value=220 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
+        <hr>
+        <label style=color:blue>Low Pass</label>
+        <input type="range" class=F min=20  max=250 value=250 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
     </div>
 </body>
 <script>
     const atx = new (window.AudioContext || window.webkitAudioContext)();
-    var filter1/* = createBiquadFilter(atx,"lowpass")*/;
-    var filter2/* = createBiquadFilter(atx,"peaking")*/;
     const filterArray = [
-        filter1 = createBiquadFilter(atx,"lowpass"),
-        filter2 = createBiquadFilter(atx,"peaking"),
+        createBiquadFilter(atx,"highpass"),
+        createBiquadFilter(atx,"peaking"),
+        createBiquadFilter(atx,"peaking"),
+        createBiquadFilter(atx,"peaking"),
+        createBiquadFilter(atx,"peaking"),
+        createBiquadFilter(atx,"peaking"),
+        createBiquadFilter(atx,"lowpass"),
     ];
     /* connect */
     filterArray.reduce((pre, cur) => pre.connect(cur)).connect(atx.destination);
@@ -102,14 +135,39 @@
                     borderWidth: 1,
                 }),
                 new DataSet({
-                    label: "LowPass",
-                    backgroundColor: 'blue',
-                    borderColor: 'blue',
+                    label: "HighPass",
+                    backgroundColor: 'blueviolet',
+                    borderColor: 'blueviolet',
                 }),
                 new DataSet({
                     label: "Peaking",
                     backgroundColor: 'green',
                     borderColor: 'green',
+                }),
+                new DataSet({
+                    label: "Peaking",
+                    backgroundColor: 'green',
+                    borderColor: 'green',
+                }),
+                new DataSet({
+                    label: "Peaking",
+                    backgroundColor: 'green',
+                    borderColor: 'green',
+                }),
+                new DataSet({
+                    label: "Peaking",
+                    backgroundColor: 'green',
+                    borderColor: 'green',
+                }),
+                new DataSet({
+                    label: "Peaking",
+                    backgroundColor: 'green',
+                    borderColor: 'green',
+                }),
+                new DataSet({
+                    label: "LowPass",
+                    backgroundColor: 'blue',
+                    borderColor: 'blue',
                 }),
                 new DataSet({
                     label: "原點水平線",
@@ -186,8 +244,7 @@
             return magResponse;
         })
         .reduce((points, magResponse, index) => points.map((p, j) => {
-            if (index == 0) p.y = 0; // reset
-            p.y += MR2dB(magResponse[j]);
+            p.y = MR2dB(magResponse[j]) + (index == 0 ? 0 : p.y);
             return p
         }), pointsArray[0]);
         /* update datasets */
