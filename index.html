@@ -9,24 +9,24 @@
     <script>
         /* x range */
         const MinHz = 20;
-        const MaxHz = 200;
+        const MaxHz = 250;
         /* point number and delta */
-        const COUNT = 180;
+        const COUNT = 230;
         const DELTA = (MaxHz - MinHz) / COUNT;
-        /* BW in OC convert Q */
-        const OCtoQ = {
-             0: 14.42,
-             1: 1.414,
-             2: 0.667,
-             3: 0.404,
-             4: 0.267,
-             5: 0.182,
-             6: 0.127,
-             7: 0.089,
-             8: 0.063,
-             9: 0.044,
-            10: 0.031,
-            11: 0.022,
+        /* BW index convert Q */
+        const BWtoQ = {
+             0: 1.0,
+             1: 1.1,
+             2: 1.2,
+             3: 1.3,
+             4: 1.5,
+             5: 1.8,
+             6: 2.0,
+             7: 2.3,
+             8: 2.6,
+             9: 3.0,
+            10: 4.0,
+            11: 5.0,
         };
         /* custom function */
         const MR2dB_COEF = 20.0 / Math.LN10;
@@ -61,27 +61,26 @@
     <canvas id="eq-chart" width=360 height=300 style="margin:auto;border:solid 1px"></canvas>
     <div>
         <label style=color:blue>Low Pass</label>
-        <input type="range" oninput="$(this).attr('result', value);setValueAtTime(filter1.frequency, value, atx.currentTime);requestAnimationFrame(Chart_EQ);" min=20 max=200 value=150 result=150 prefix="Hz = ">
-        <input type="range" oninput="$(this).attr('result', OCtoQ[value]);setValueAtTime(filter1.Q, OCtoQ[value], atx.currentTime);requestAnimationFrame(Chart_EQ);" min=0 max=11 value=11 prefix="Q = " class=Q>
-        <input type="range" oninput="$(this).attr('result', value);setValueAtTime(filter1.gain, value, atx.currentTime);requestAnimationFrame(Chart_EQ);" min=-10 max=10 value=0 result=0 prefix="Gain = ">
+        <input type="range" class=F min=20  max=250 value=200 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
         <hr>
         <label style=color:green>Peaking</label>
-        <input type="range" oninput="$(this).attr('result', value);setValueAtTime(filter2.frequency, value, atx.currentTime);requestAnimationFrame(Chart_EQ);" min=20 max=200 value=50 result=150 prefix="Hz = ">
-        <input type="range" oninput="$(this).attr('result', OCtoQ[value]);setValueAtTime(filter2.Q, OCtoQ[value], atx.currentTime);requestAnimationFrame(Chart_EQ);" min=0 max=11 value=0 prefix="Q = " class=Q>
-        <input type="range" oninput="$(this).attr('result', value);setValueAtTime(filter2.gain, value, atx.currentTime);requestAnimationFrame(Chart_EQ);" min=-10 max=10 value=0 result=0 prefix="Gain = ">
+        <input type="range" class=F min=20  max=250 value=50 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0  prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0  prefix="Gain = ">
     </div>
 </body>
 <script>
     const atx = new (window.AudioContext || window.webkitAudioContext)();
-    const filter1 = createBiquadFilter(atx,"lowpass");
-    const filter2 = createBiquadFilter(atx,"peaking");
-    filter1.connect(filter2).connect(atx.destination);
-    setValueAtTime(filter1.frequency, 180, atx.currentTime);
-    setValueAtTime(filter2.frequency,  50, atx.currentTime);
-    setValueAtTime(filter1.Q, OCtoQ[11], atx.currentTime);
-    setValueAtTime(filter2.Q, OCtoQ[ 0], atx.currentTime);
-    setValueAtTime(filter1.gain, 0, atx.currentTime);
-    setValueAtTime(filter2.gain, 0, atx.currentTime);
+    var filter1/* = createBiquadFilter(atx,"lowpass")*/;
+    var filter2/* = createBiquadFilter(atx,"peaking")*/;
+    const filterArray = [
+        filter1 = createBiquadFilter(atx,"lowpass"),
+        filter2 = createBiquadFilter(atx,"peaking"),
+    ];
+    /* connect */
+    filterArray.reduce((pre, cur) => pre.connect(cur)).connect(atx.destination);
 </script>
 <script>
     const DataSet = (f => (f.prototype = {
@@ -116,7 +115,7 @@
                     label: "原點水平線",
                     backgroundColor: 'black',
                     borderColor: 'black',
-                    data: [{ x: 0, y: 0 }, { x: 200, y: 0 }]
+                    data: [{ x: MinHz, y: 0 }, { x: MaxHz, y: 0 }]
                 }),
             ]
         },
@@ -172,38 +171,59 @@
             responsiveAnimationDuration: 0, // animation duration after a resize
         }
     });
-    const phaseResponse = new Float32Array(COUNT); // dummy
-    const magResponse_1 = new Float32Array(COUNT);
-    const magResponse_2 = new Float32Array(COUNT);
-    const frequencyHz   = new Float32Array(COUNT).map((_, i) => MinHz + i * DELTA);
+    const frequencyHz = new Float32Array(COUNT).map((_, i) => MinHz + i * DELTA);
+    const pointsArray = [
+        // prepare pointsArray[0]
+        frequencyHz.reduce((points, f) => (points.push({ x: f, y: 0 }) && points), [])
+    ];
     const Chart_EQ = () => {
-        var points0 = [];
-        var points1 = [];
-        var points2 = [];
-        filter1.getFrequencyResponse(frequencyHz, magResponse_1, phaseResponse);
-        filter2.getFrequencyResponse(frequencyHz, magResponse_2, phaseResponse);
-        frequencyHz.forEach((f, i) => {
-            var dbResponse1 = MR2dB(magResponse_1[i]);
-            var dbResponse2 = MR2dB(magResponse_2[i]);
-            points0.push({
-                x: f, y: dbResponse1+dbResponse2
-            });
-            points1.push({
-                x: f, y: dbResponse1
-            });
-            points2.push({
-                x: f, y: dbResponse2
-            });
-        });
-        eqChart.data.datasets[0].data = points0;
-        eqChart.data.datasets[1].data = points1;
-        eqChart.data.datasets[2].data = points2;
+        /* stream Array */
+        filterArray
+        .map((filter, index) => {
+            var magResponse = new Float32Array(COUNT);
+            filter.getFrequencyResponse(frequencyHz, magResponse, new Float32Array(COUNT));
+            magResponse.reduce((points, mr, i) => (points.push({ x: frequencyHz[i], y: MR2dB(mr)}) && points), pointsArray[index + 1] = []);
+            return magResponse;
+        })
+        .reduce((points, magResponse, index) => points.map((p, j) => {
+            if (index == 0) p.y = 0; // reset
+            p.y += MR2dB(magResponse[j]);
+            return p
+        }), pointsArray[0]);
+        /* update datasets */
+        pointsArray.forEach((points, i) => eqChart.data.datasets[i].data = points);
+        /* plot */
         eqChart.update();
     }
 </script>
 <script>
     $(() => {
-        $(".Q").each((_, q) => $(q).attr('result', OCtoQ[q.value]));
+        /* custom extent jquery function */
+        $.fn.extend({valueQ: function () {
+            return this.map((_, input) => $(input).hasClass("Q") ? BWtoQ[input.value] : input.value).toArray();
+        }});
+        /* init + listen input */
+        const inputRangeSetting = ($input, param) => {
+            // 設定 result 屬性 -> 給 ::after 參照
+            $input.attr('result', $input.valueQ());
+            // 更新 filter 參數
+            setValueAtTime(param, $input.valueQ(), atx.currentTime);
+        };
+        const inputRangeHandler = ($input, param) => {
+            // 設定更新
+            inputRangeSetting($input, param);
+            // 監聽 input
+            $input.on("input", () => {
+                // 設定更新
+                inputRangeSetting($input, param);
+                // 繪圖
+                requestAnimationFrame(Chart_EQ);
+            });
+        };
+        $(".F").each((index, input) => inputRangeHandler($(input), filterArray[index].frequency));
+        $(".Q").each((index, input) => inputRangeHandler($(input), filterArray[index].Q));
+        $(".G").each((index, input) => inputRangeHandler($(input), filterArray[index].gain));
+        /* first time plot */
         requestAnimationFrame(Chart_EQ);
     });
 </script>
