@@ -77,37 +77,44 @@
     <input  id="drawComponentEq" type="checkbox">
     <canvas id="eq-chart" width=360 height=300 style="margin:auto;border:solid 1px"></canvas>
     <div id=range_container>
-        <label style=color:blueviolet>High Pass</label>
+        <label for=0 style=color:blueviolet>High Pass</label>
+        <input type="radio" name=eq id=0 value=0>
         <input type="range" class=F min=20  max=250 value=20 prefix="Hz = ">
         <input type="range" class=Q min=0   max=11  value=0  prefix="Q = ">
         <input type="range" class=G min=-10 max=10  value=0  prefix="Gain = " disabled>
         <hr>
-        <label style=color:green>Peaking</label>
+        <label for=1 style=color:green>Peaking</label>
+        <input type="radio" name=eq id=1 value=1 checked>
         <input type="range" class=F min=20  max=250 value=60 prefix="Hz = ">
         <input type="range" class=Q min=0   max=11  value=0  prefix="Q = ">
         <input type="range" class=G min=-10 max=10  value=0  prefix="Gain = ">
         <hr>
-        <label style=color:green>Peaking</label>
+        <label for=2 style=color:green>Peaking</label>
+        <input type="radio" name=eq id=2 value=2>
         <input type="range" class=F min=20  max=250 value=100 prefix="Hz = ">
         <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
         <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
         <hr>
-        <label style=color:green>Peaking</label>
+        <label for=3 style=color:green>Peaking</label>
+        <input type="radio" name=eq id=3 value=3>
         <input type="range" class=F min=20  max=250 value=140 prefix="Hz = ">
         <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
         <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
         <hr>
-        <label style=color:green>Peaking</label>
+        <label for=4 style=color:green>Peaking</label>
+        <input type="radio" name=eq id=4 value=4>
         <input type="range" class=F min=20  max=250 value=180 prefix="Hz = ">
         <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
         <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
         <hr>
-        <label style=color:green>Peaking</label>
+        <label for=5 style=color:green>Peaking</label>
+        <input type="radio" name=eq id=5 value=5>
         <input type="range" class=F min=20  max=250 value=220 prefix="Hz = ">
         <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
         <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
         <hr>
-        <label style=color:blue>Low Pass</label>
+        <label for=6 style=color:blue>Low Pass</label>
+        <input type="radio" name=eq id=6 value=6>
         <input type="range" class=F min=20  max=250 value=250 prefix="Hz = ">
         <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
         <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = " disabled>
@@ -179,18 +186,26 @@
                     backgroundColor: 'blue',
                     borderColor: 'blue',
                 }),
+                // new DataSet({
+                //     label: "原點水平線",
+                //     backgroundColor: 'black',
+                //     borderColor: 'black',
+                //     data: [{ x: MinHz, y: 0 }, { x: MaxHz, y: 0 }]
+                // }),
                 new DataSet({
-                    label: "原點水平線",
+                    label: "十字線",
                     backgroundColor: 'black',
                     borderColor: 'black',
-                    data: [{ x: MinHz, y: 0 }, { x: MaxHz, y: 0 }]
+                    data: [
+                        // { x: 30, y: MinDB }, { x: 30, y: MaxDB }, null, { x: MinHz, y: 5 }, { x: MaxHz, y: 5 }, null,
+                    ],
                 }),
                 new DataSet({
                     label: "EQ 參考點",
                     type: "scatter",
                     showLine: false,
                     pointRadius: 3,
-                    borderWidth: 1,
+                    pointBorderWidth: 1,
                     borderColor: 'black',
                 })
             ]
@@ -199,6 +214,7 @@
             responsive: false,
             layout: {
                 padding: {
+                    right: 25,
                     top: 15
                 }
             },
@@ -218,8 +234,15 @@
                         max: MaxHz,
                         maxRotation: 0,
                         maxTicksLimit: 1.5,
-                        callback: v => v + "Hz"
+                        callback: v => v //+ "Hz"
                     },
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Frequency(Hz)',
+                        padding: {
+                            top: -18
+                        }
+                    }
                 }],
                 yAxes: [{
                     ticks: {
@@ -230,7 +253,14 @@
                         suggestedMin: MinDB,
                         suggestedMax: MaxDB,
                         maxTicksLimit:  5,
-                        callback: v => Math.round(v*100)/100 + "dB"
+                        callback: v => Math.round(v*100)/100 //+ "dB"
+                    },
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Gain(dB)',
+                        padding: {
+                            bottom: 0
+                        }
                     },
                     gridLines: {
                         display: false
@@ -272,6 +302,14 @@
         }), pointsArray[0]);
         /* update datasets */
         pointsArray.forEach((points, i) => eqChart.data.datasets[i].data = points);
+        /* update eq cross plot */
+        var eq_ind = $("input[name=eq]:radio:checked").val();
+        var crossX = $(".F").get(eq_ind).value;
+        var crossY = eq_ind > 0 && eq_ind < 6 ? $(".G").get(eq_ind).value : BWtoQ[$(".Q").get(eq_ind).value];
+        eqChart.data.datasets[eqChart.data.datasets.length - 2].data = [
+            { x: crossX, y: MinDB }, { x: crossX, y: MaxDB }, null, { x: MinHz, y: crossY }, { x: MaxHz, y: crossY }, null,
+        ];
+        eqChart.data.datasets[eqChart.data.datasets.length - 1].pointBorderWidth = new Array(7).fill(1).map((v, i) => v * (i == eq_ind ? 3 : 1));
         /* update eq component points */
         $(".F").each((i, input) => eqChart.data.datasets[eqChart.data.datasets.length - 1].data[i] = { 
             x: input.value,
@@ -310,6 +348,7 @@
         $(".G").each((index, input) => inputRangeHandler($(input), filterArray[index].gain));
         /* listen event and plot */
         $("#drawComponentEq").change(Chart_EQ);
+        $('input[name="eq"]').change(Chart_EQ);
         /* first time plot */
         requestAnimationFrame(Chart_EQ);
     });
