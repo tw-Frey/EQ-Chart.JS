@@ -7,6 +7,9 @@
     <script src=js/Chart.min.js></script>
     <script src=js/jquery-3.2.1.min.js></script>
     <script>
+        /* y range */
+        const MinDB = -10;
+        const MaxDB =  10;
         /* x range */
         const MinHz = 20;
         const MaxHz = 250;
@@ -60,6 +63,9 @@
             color:black;
             background-color: grey;
         }
+        input:disabled {
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
@@ -68,7 +74,7 @@
         <label style=color:blueviolet>High Pass</label>
         <input type="range" class=F min=20  max=250 value=20 prefix="Hz = ">
         <input type="range" class=Q min=0   max=11  value=0  prefix="Q = ">
-        <input type="range" class=G min=-10 max=10  value=0  prefix="Gain = ">
+        <input type="range" class=G min=-10 max=10  value=0  prefix="Gain = " disabled>
         <hr>
         <label style=color:green>Peaking</label>
         <input type="range" class=F min=20  max=250 value=60 prefix="Hz = ">
@@ -98,7 +104,7 @@
         <label style=color:blue>Low Pass</label>
         <input type="range" class=F min=20  max=250 value=250 prefix="Hz = ">
         <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
-        <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
+        <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = " disabled>
     </div>
 </body>
 <script>
@@ -117,12 +123,10 @@
 </script>
 <script>
     const DataSet = (f => (f.prototype = {
-        fill: false,
-        borderWidth: 0.2,
         lineTension: 0, // Set to 0 to draw straightlines, default = 0.4
-        cubicInterpolationMode: 'monotone',
+        borderWidth: 0.2,
         pointRadius: 0,
-        pointHitRadius: 0,
+        fill: false,
     }) && f)(function (extend) { return $.extend(this, extend) });
     const eqChart = new Chart(document.getElementById('eq-chart'), {
         type: 'line',
@@ -180,16 +184,17 @@
         options: {
             responsive: false,
             layout: {
-                // padding: {
-                //     left: -5
-                // }
+                padding: {
+                    top: 15
+                }
             },
             legend: {
-                // display: false
+                display: false,
                 labels: {
                     filter: label => label.datasetIndex == 0
                 }
             },
+            events: [],
             scales: {
                 xAxes: [{
                     // display:false,
@@ -198,16 +203,18 @@
                         min: MinHz,
                         max: MaxHz,
                         maxRotation: 0,
-                        // maxTicksLimit: 2,
+                        maxTicksLimit: 1.5,
                         callback: v => v + "Hz"
                     },
                 }],
                 yAxes: [{
                     ticks: {
-                        // mirror: true,
-                        // padding: -5,
-                        suggestedMin: -10,
-                        suggestedMax:  10,
+                        mirror: true,
+                        padding: -5,
+                        min: MinDB,
+                        max: MaxDB,
+                        suggestedMin: MinDB,
+                        suggestedMax: MaxDB,
                         maxTicksLimit:  5,
                         callback: v => Math.round(v*100)/100 + "dB"
                     },
