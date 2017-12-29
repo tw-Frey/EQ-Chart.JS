@@ -79,45 +79,45 @@
     <div id=range_container>
         <label for=0 style=color:blueviolet>High Pass</label>
         <input type="radio" name=eq id=0 value=0>
-        <input type="range" class=F min=20  max=250 value=20 prefix="Hz = ">
-        <input type="range" class=Q min=0   max=11  value=0  prefix="Q = ">
-        <input type="range" class=G min=-10 max=10  value=0  prefix="Gain = " disabled>
+        <input type="range" class=F min=20  max=250 value=0 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0 prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0 prefix="Gain = " disabled>
         <hr>
         <label for=1 style=color:green>Peaking</label>
-        <input type="radio" name=eq id=1 value=1 checked>
-        <input type="range" class=F min=20  max=250 value=60 prefix="Hz = ">
-        <input type="range" class=Q min=0   max=11  value=0  prefix="Q = ">
-        <input type="range" class=G min=-10 max=10  value=0  prefix="Gain = ">
+        <input type="radio" name=eq id=1 value=1>
+        <input type="range" class=F min=20  max=250 value=0 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0 prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0 prefix="Gain = ">
         <hr>
         <label for=2 style=color:green>Peaking</label>
         <input type="radio" name=eq id=2 value=2>
-        <input type="range" class=F min=20  max=250 value=100 prefix="Hz = ">
-        <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
-        <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
+        <input type="range" class=F min=20  max=250 value=0 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0 prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0 prefix="Gain = ">
         <hr>
         <label for=3 style=color:green>Peaking</label>
-        <input type="radio" name=eq id=3 value=3>
-        <input type="range" class=F min=20  max=250 value=140 prefix="Hz = ">
-        <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
-        <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
+        <input type="radio" name=eq id=3 value=3 checked>
+        <input type="range" class=F min=20  max=250 value=0 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0 prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0 prefix="Gain = ">
         <hr>
         <label for=4 style=color:green>Peaking</label>
         <input type="radio" name=eq id=4 value=4>
-        <input type="range" class=F min=20  max=250 value=180 prefix="Hz = ">
-        <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
-        <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
+        <input type="range" class=F min=20  max=250 value=0 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0 prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0 prefix="Gain = ">
         <hr>
         <label for=5 style=color:green>Peaking</label>
         <input type="radio" name=eq id=5 value=5>
-        <input type="range" class=F min=20  max=250 value=220 prefix="Hz = ">
-        <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
-        <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = ">
+        <input type="range" class=F min=20  max=250 value=0 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0 prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0 prefix="Gain = ">
         <hr>
         <label for=6 style=color:blue>Low Pass</label>
         <input type="radio" name=eq id=6 value=6>
-        <input type="range" class=F min=20  max=250 value=250 prefix="Hz = ">
-        <input type="range" class=Q min=0   max=11  value=0   prefix="Q = ">
-        <input type="range" class=G min=-10 max=10  value=0   prefix="Gain = " disabled>
+        <input type="range" class=F min=20  max=250 value=0 prefix="Hz = ">
+        <input type="range" class=Q min=0   max=11  value=0 prefix="Q = ">
+        <input type="range" class=G min=-10 max=10  value=0 prefix="Gain = " disabled>
     </div>
 </body>
 <script>
@@ -325,6 +325,9 @@
         $.fn.extend({valueQ: function () {
             return this.map((_, input) => $(input).hasClass("Q") ? BWtoQ[input.value] : input.value).toArray();
         }});
+        /* 平均 x 分佈 */
+        const ratio = Math.pow(MaxHz / MinHz, 1 / 6);
+        $(".F").val(i => MinHz * Math.pow(ratio, i));
         /* init + listen input */
         const inputRangeSetting = ($input, param) => {
             // 設定 result 屬性 -> 給 ::after 參照
