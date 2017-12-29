@@ -43,19 +43,24 @@
         }
     </script>
     <style>
+        #drawComponentEq {
+            display: block;
+            margin-left: auto;
+            margin-bottom: -10px;
+        }
         #range_container {
             height: 340px;
             overflow-y: scroll;
             overflow-x: hidden;
         }
-        input {
+        input[type="range"] {
             outline: 0px;
             -webkit-appearance: none;
             background-color: gainsboro;
             display: block;
             width: 100%;
         }
-        input::after {
+        input[type="range"]::after {
             content: attr(prefix)attr(result);
             display: block;
             width: 65px;
@@ -69,6 +74,7 @@
     </style>
 </head>
 <body>
+    <input  id="drawComponentEq" type="checkbox">
     <canvas id="eq-chart" width=360 height=300 style="margin:auto;border:solid 1px"></canvas>
     <div id=range_container>
         <label style=color:blueviolet>High Pass</label>
@@ -247,7 +253,9 @@
         .map((filter, index) => {
             var magResponse = new Float32Array(COUNT);
             filter.getFrequencyResponse(frequencyHz, magResponse, new Float32Array(COUNT));
-            magResponse.reduce((points, mr, i) => (points.push({ x: frequencyHz[i], y: MR2dB(mr)}) && points), pointsArray[index + 1] = []);
+            magResponse.reduce((points, mr, i) => $("#drawComponentEq").prop("checked")
+                    && points.push({ x: frequencyHz[i], y: MR2dB(mr)}) && points || points
+            , pointsArray[index + 1] = []);
             return magResponse;
         })
         .reduce((points, magResponse, index) => points.map((p, j) => {
@@ -287,6 +295,8 @@
         $(".F").each((index, input) => inputRangeHandler($(input), filterArray[index].frequency));
         $(".Q").each((index, input) => inputRangeHandler($(input), filterArray[index].Q));
         $(".G").each((index, input) => inputRangeHandler($(input), filterArray[index].gain));
+        /* listen event and plot */
+        $("#drawComponentEq").change(Chart_EQ);
         /* first time plot */
         requestAnimationFrame(Chart_EQ);
     });
