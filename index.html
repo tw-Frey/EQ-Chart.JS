@@ -35,7 +35,7 @@
         const MR2dB_COEF = 20.0 / Math.LN10;
         const MR2dB = magResponse => MR2dB_COEF * Math.log(magResponse);
         const setValueAtTime = (obj, value, time) => obj["setValueAtTime"](value, time);
-        const requestAnimationFrame = f => window.setTimeout(f, 300);
+        // const requestAnimationFrame = f => window.setTimeout(f, 300);
         const createBiquadFilter = (atx, type) => {
             const filter = atx.createBiquadFilter();
             filter.type = type;
